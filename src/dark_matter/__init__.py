@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from dark_matter.constants import FIELDNAMES, R0, V0, LONGITUDE, LONGITUDE_RADIANS, VR, \
     V, R
-from dark_matter.util import get_v_closest, read_data_from_file
+from dark_matter.util import get_v_closest, read_data_from_file, get_fwhm_of_value
 
 
 @click.group()
@@ -22,8 +22,10 @@ def plot_long_data(datafile):
     velocities, temperatures = read_data_from_file(datafile)
     longitude = float(datafile.stem.split("_")[0])
     vr, tr = get_v_closest(longitude, velocities, temperatures)
+    vh, th = get_fwhm_of_value(vr, tr, velocities, temperatures)
     plt.plot(velocities, temperatures, '.b')
-    plt.scatter([vr], [tr], s=20, color="r")
+    plt.scatter([vr], [tr], s=30, color="r")
+    plt.scatter([vh], [th], s=30, color="g")
     plt.show()
 
 
