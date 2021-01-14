@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from dark_matter.constants import FIELDNAMES, R0, V0, LONGITUDE, LONGITUDE_RADIANS, VR, \
-    V, R
+    V, R, V_ERR, R0_ERROR, R_ERR
 from dark_matter.util import get_v_closest, read_data_from_file, get_fwhm_of_value
 
 
@@ -38,19 +38,25 @@ def build_data(datadir, outputfile):
     for datafile in datadir.glob("*.csv"):
         velocities, temperatures = read_data_from_file(datafile)
         longitude = float(datafile.stem.split("_")[0])
-        vr, _ = get_v_closest(
+        vr, tr = get_v_closest(
             longitude=longitude, velocities=velocities, temperatures=temperatures
         )
+        vh, th = get_fwhm_of_value(vr, tr, velocities, temperatures)
+        vr_err = np.abs(vh - vr) / 2.355
         longitude_radians = longitude * np.pi / 180
-        r = R0 * np.sin(longitude_radians)
-        v = vr + V0 * np.sin(longitude_radians)
+        sin_long = np.sin(longitude_radians)
+        r = R0 * sin_long
+        r_err = np.abs(R0_ERROR * sin_long)
+        v = vr + V0 * sin_long
         data.append(
             {
                 LONGITUDE: longitude,
                 LONGITUDE_RADIANS: longitude_radians,
                 VR: vr,
                 V: v,
-                R: r
+                V_ERR: vr_err,
+                R: r,
+                R_ERR: r_err
             }
         )
     data = sorted(data, key=lambda datadict: datadict[R])
@@ -68,12 +74,28 @@ def plot_data(datafile):
     with open(datafile, mode="r") as fd:
         reader = csv.DictReader(fd)
         for row in reader:
-            data.append([float(row[R]), float(row[V])])
+            data.append(
+                [float(row[R]), float(row[R_ERR]), float(row[V]), float(row[V_ERR])]
+            )
     data = np.array(data)
     data = data.transpose()
-    r_list, v_list = data[0], data[1]
-    plt.plot(r_list[r_list > 0], v_list[r_list > 0], ".k")
-    plt.plot(np.abs(r_list[r_list < 0]), np.abs(v_list[r_list < 0]), ".b")
+    r_list, r_err_list, v_list, v_err_list = data
+    plt.errorbar(
+        r_list[r_list > 0],
+        v_list[r_list > 0],
+        xerr=r_err_list[r_list > 0],
+        yerr=v_err_list[r_list > 0],
+        linestyle="None",
+        ecolor="r"
+    )
+    plt.errorbar(
+        np.abs(r_list[r_list < 0]),
+        np.abs(v_list[r_list < 0]),
+        xerr=r_err_list[r_list < 0],
+        yerr=v_err_list[r_list < 0],
+        linestyle="None",
+        ecolor="b"
+    )
     plt.vlines([0], [-200], [200], "r")
     plt.hlines([0], [-7.5], [6.5], "b")
     plt.xlabel("R")

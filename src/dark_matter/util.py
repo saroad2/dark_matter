@@ -25,7 +25,7 @@ def get_v_closest(longitude, velocities, temperatures):
         return candidates[0]
 
 
-def get_fwhm_of_value(vr, tr, velocities, temperatures, eps=0.5):
+def get_fwhm_of_value(vr, tr, velocities, temperatures, eps=5):
     candidates = [
         (v, t) for v, t in zip(velocities, temperatures) if np.abs(t - (tr / 2)) <= eps
     ]
