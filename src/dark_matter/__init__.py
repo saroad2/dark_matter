@@ -42,7 +42,7 @@ def build_data(datadir, outputfile):
             longitude=longitude, velocities=velocities, temperatures=temperatures
         )
         vh, th = get_fwhm_of_value(vr, tr, velocities, temperatures)
-        vr_err = np.abs(vh - vr) / 2.355
+        vr_err = 2 * np.abs(vh - vr) / 2.355
         longitude_radians = longitude * np.pi / 180
         sin_long = np.sin(longitude_radians)
         r = R0 * sin_long
