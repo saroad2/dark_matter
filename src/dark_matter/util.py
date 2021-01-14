@@ -20,6 +20,6 @@ def get_v_closest(longitude, velocities, temperatures):
     candidates = [(v, t) for v, t in zip(velocities, temperatures) if t >= THRESHOLD]
     candidates = sorted(candidates, key=lambda v_t_tuple: v_t_tuple[0])
     if longitude > 0:
-        return candidates[-1][0]
+        return candidates[-1]
     else:
-        return candidates[0][0]
+        return candidates[0]

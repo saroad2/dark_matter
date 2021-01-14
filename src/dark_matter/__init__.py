@@ -20,7 +20,10 @@ def dark_matter():
 def plot_long_data(datafile):
     datafile = Path(datafile)
     velocities, temperatures = read_data_from_file(datafile)
-    plt.plot(velocities, temperatures)
+    longitude = float(datafile.stem.split("_")[0])
+    vr, tr = get_v_closest(longitude, velocities, temperatures)
+    plt.plot(velocities, temperatures, '.b')
+    plt.scatter([vr], [tr], s=20, color="r")
     plt.show()
 
 
@@ -33,7 +36,7 @@ def build_data(datadir, outputfile):
     for datafile in datadir.glob("*.csv"):
         velocities, temperatures = read_data_from_file(datafile)
         longitude = float(datafile.stem.split("_")[0])
-        vr = get_v_closest(
+        vr, _ = get_v_closest(
             longitude=longitude, velocities=velocities, temperatures=temperatures
         )
         longitude_radians = longitude * np.pi / 180
@@ -67,7 +70,10 @@ def plot_data(datafile):
     data = np.array(data)
     data = data.transpose()
     r_list, v_list = data[0], data[1]
-    plt.plot(r_list, v_list)
+    plt.plot(r_list[r_list > 0], v_list[r_list > 0], ".k")
+    plt.plot(np.abs(r_list[r_list < 0]), np.abs(v_list[r_list < 0]), ".b")
+    plt.vlines([0], [-200], [200], "r")
+    plt.hlines([0], [-7.5], [6.5], "b")
     plt.xlabel("R")
     plt.ylabel("V")
     plt.show()
