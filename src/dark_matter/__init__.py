@@ -6,8 +6,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from dark_matter.constants import FIELDNAMES, R0, V0, LONGITUDE, LONGITUDE_RADIANS, VR, \
-    V, R, V_ERR, R0_ERROR, R_ERR, V0_ERROR, VR_ERR
+from dark_matter.constants import (
+    FIELDNAMES,
+    R0,
+    V0,
+    LONGITUDE,
+    LONGITUDE_RADIANS,
+    VR,
+    V,
+    R,
+    V_ERR,
+    R0_ERROR,
+    R_ERR,
+    V0_ERROR,
+    VR_ERR, V_FIRST, V_ERR_FIRST, V_FORTH, V_ERR_FORTH, V_TOTAL, V_MEASURE_ERR_TOTAL,
+    V_STAT_ERR_TOTAL, V_ERR_TOTAL,
+)
 from dark_matter.util import get_v_closest, read_data_from_file, get_fwhm_of_value
 
 
@@ -24,7 +38,7 @@ def plot_long_data(datafile):
     longitude = float(datafile.stem.split("_")[0])
     vr, tr = get_v_closest(longitude, velocities, temperatures)
     vh, th = get_fwhm_of_value(vr, tr, velocities, temperatures)
-    plt.plot(velocities, temperatures, '.b')
+    plt.plot(velocities, temperatures, ".b")
     plt.scatter([vr], [tr], s=30, color="r")
     plt.scatter([vh], [th], s=30, color="g")
     plt.show()
@@ -59,7 +73,7 @@ def build_data(datadir, outputfile):
                 V: v,
                 V_ERR: v_err,
                 R: r,
-                R_ERR: r_err
+                R_ERR: r_err,
             }
         )
     data = sorted(data, key=lambda datadict: datadict[R])
@@ -89,7 +103,7 @@ def plot_data(datafile):
         xerr=r_err_list[r_list > 0],
         yerr=v_err_list[r_list > 0],
         linestyle="None",
-        ecolor="r"
+        ecolor="r",
     )
     plt.errorbar(
         np.abs(r_list[r_list < 0]),
@@ -97,10 +111,10 @@ def plot_data(datafile):
         xerr=r_err_list[r_list < 0],
         yerr=v_err_list[r_list < 0],
         linestyle="None",
-        ecolor="b"
+        ecolor="b",
     )
-    plt.vlines([0], [-200], [200], "r")
-    plt.hlines([0], [-7.5], [6.5], "b")
+    plt.vlines([0], [-200], [200], "k")
+    plt.hlines([0], [-7.5], [6.5], "k")
     plt.xlabel("R")
     plt.ylabel("V")
     plt.show()
@@ -112,43 +126,70 @@ def plot_data(datafile):
 def combine_quarters(datafile, outputfile):
     df = pd.read_csv(datafile)
 
-    v_first = f"{V}_first"
-    v_err_first = f"{V_ERR}_first"
-    v_forth = f"{V}_forth"
-    v_err_forth = f"{V_ERR}_forth"
-    v_total = f"{V}_total"
-    v_stat_err_total = f"{V}_stat_err_total"
-    v_measure_err_total = f"{V}_measure_err_total"
-    v_err_total = f"{V}_err_total"
-
     first_quarter = df[df[R] > 0]
-    first_quarter[v_first] = first_quarter.pop(V)
-    first_quarter[v_err_first] = first_quarter.pop(V_ERR)
+    first_quarter[V_FIRST] = first_quarter.pop(V)
+    first_quarter[V_ERR_FIRST] = first_quarter.pop(V_ERR)
     print("first_quarter")
     print(first_quarter)
 
     forth_quarter = df[df[R] < 0]
-    forth_quarter[v_forth] = np.abs(forth_quarter.pop(V))
-    forth_quarter[v_err_forth] = np.abs(forth_quarter.pop(V_ERR))
+    forth_quarter[V_FORTH] = np.abs(forth_quarter.pop(V))
+    forth_quarter[V_ERR_FORTH] = np.abs(forth_quarter.pop(V_ERR))
     forth_quarter[R] = np.abs(forth_quarter[R])
     print("forth_quarter")
     print(forth_quarter)
 
-    total = first_quarter[[R, R_ERR, v_first, v_err_first]].join(
-        forth_quarter[[R, v_forth, v_err_forth]].set_index(R), on=R
+    total = first_quarter[[R, R_ERR, V_FIRST, V_ERR_FIRST]].join(
+        forth_quarter[[R, V_FORTH, V_ERR_FORTH]].set_index(R), on=R
     )
-    total[v_total] = (total[v_first] + total[v_forth]) / 2
-    total[v_measure_err_total] = np.sqrt(
-        total[v_err_first] ** 2 + total[v_err_forth] ** 2
+    total[V_TOTAL] = (total[V_FIRST] + total[V_FORTH]) / 2
+    total[V_MEASURE_ERR_TOTAL] = np.sqrt(
+        total[V_ERR_FIRST] ** 2 + total[V_ERR_FORTH] ** 2
     )
-    total[v_stat_err_total] = np.sqrt(
-        (total[v_first] - total[v_total]) ** 2 + (total[v_forth] - total[v_total]) ** 2
+    total[V_STAT_ERR_TOTAL] = np.sqrt(
+        (total[V_FIRST] - total[V_TOTAL]) ** 2 + (total[V_FORTH] - total[V_TOTAL]) ** 2
     )
-    total[v_err_total] = np.sqrt(
-        total[v_measure_err_total] ** 2 + total[v_stat_err_total] ** 2
+    total[V_ERR_TOTAL] = np.sqrt(
+        total[V_MEASURE_ERR_TOTAL] ** 2 + total[V_STAT_ERR_TOTAL] ** 2
     )
     print("total")
     print(total)
     total.to_csv(outputfile, index=False)
+
+
+@dark_matter.command("plot-quarters")
+@click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
+def plot_quarters(datafile):
+    df = pd.read_csv(datafile)
+    plt.errorbar(
+        df[R],
+        df[V_FIRST],
+        xerr=df[R_ERR],
+        yerr=df[V_ERR_FIRST],
+        linestyle="None",
+        ecolor="b",
+    )
+    plt.errorbar(
+        df[R],
+        df[V_FORTH],
+        xerr=df[R_ERR],
+        yerr=df[V_ERR_FORTH],
+        linestyle="None",
+        ecolor="r",
+    )
+    plt.errorbar(
+        df[R],
+        df[V_TOTAL],
+        xerr=df[R_ERR],
+        yerr=df[V_ERR_TOTAL],
+        linestyle="None",
+        ecolor="y",
+    )
+    plt.vlines([0], [-200], [200], "k")
+    plt.hlines([0], [-7.5], [6.5], "k")
+    plt.xlabel("R")
+    plt.ylabel("V")
+    plt.show()
+
 
 dark_matter()

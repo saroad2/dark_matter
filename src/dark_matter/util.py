@@ -5,7 +5,7 @@ from dark_matter.constants import THRESHOLD
 
 
 def read_data_from_file(datafile):
-    data = np.genfromtxt(datafile, delimiter=',')
+    data = np.genfromtxt(datafile, delimiter=",")
     data = data.transpose()
 
     velocities = data[0]
@@ -29,4 +29,4 @@ def get_fwhm_of_value(vr, tr, velocities, temperatures, eps=5):
     candidates = [
         (v, t) for v, t in zip(velocities, temperatures) if np.abs(t - (tr / 2)) <= eps
     ]
-    return min(candidates, key=lambda x: abs(x[0]-vr))
+    return min(candidates, key=lambda x: abs(x[0] - vr))

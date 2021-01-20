@@ -13,3 +13,12 @@ V_ERR = "V_ERR"
 R = "R"
 R_ERR = "R_ERR"
 FIELDNAMES = [LONGITUDE, LONGITUDE_RADIANS, VR, VR_ERR, V, V_ERR, R, R_ERR]
+
+V_FIRST = f"{V}_first"
+V_ERR_FIRST = f"{V_ERR}_first"
+V_FORTH = f"{V}_forth"
+V_ERR_FORTH = f"{V_ERR}_forth"
+V_TOTAL = f"{V}_total"
+V_STAT_ERR_TOTAL = f"{V}_stat_err_total"
+V_MEASURE_ERR_TOTAL = f"{V}_measure_err_total"
+V_ERR_TOTAL = f"{V}_err_total"
