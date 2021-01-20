@@ -4,6 +4,7 @@ import click
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from dark_matter.constants import FIELDNAMES, R0, V0, LONGITUDE, LONGITUDE_RADIANS, VR, \
     V, R, V_ERR, R0_ERROR, R_ERR, V0_ERROR, VR_ERR
@@ -104,5 +105,50 @@ def plot_data(datafile):
     plt.ylabel("V")
     plt.show()
 
+
+@dark_matter.command("combine-quarters")
+@click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
+@click.argument("outputfile", type=click.Path(dir_okay=False))
+def combine_quarters(datafile, outputfile):
+    df = pd.read_csv(datafile)
+
+    v_first = f"{V}_first"
+    v_err_first = f"{V_ERR}_first"
+    v_forth = f"{V}_forth"
+    v_err_forth = f"{V_ERR}_forth"
+    v_total = f"{V}_total"
+    v_stat_err_total = f"{V}_stat_err_total"
+    v_measure_err_total = f"{V}_measure_err_total"
+    v_err_total = f"{V}_err_total"
+
+    first_quarter = df[df[R] > 0]
+    first_quarter[v_first] = first_quarter.pop(V)
+    first_quarter[v_err_first] = first_quarter.pop(V_ERR)
+    print("first_quarter")
+    print(first_quarter)
+
+    forth_quarter = df[df[R] < 0]
+    forth_quarter[v_forth] = np.abs(forth_quarter.pop(V))
+    forth_quarter[v_err_forth] = np.abs(forth_quarter.pop(V_ERR))
+    forth_quarter[R] = np.abs(forth_quarter[R])
+    print("forth_quarter")
+    print(forth_quarter)
+
+    total = first_quarter[[R, R_ERR, v_first, v_err_first]].join(
+        forth_quarter[[R, v_forth, v_err_forth]].set_index(R), on=R
+    )
+    total[v_total] = (total[v_first] + total[v_forth]) / 2
+    total[v_measure_err_total] = np.sqrt(
+        total[v_err_first] ** 2 + total[v_err_forth] ** 2
+    )
+    total[v_stat_err_total] = np.sqrt(
+        (total[v_first] - total[v_total]) ** 2 + (total[v_forth] - total[v_total]) ** 2
+    )
+    total[v_err_total] = np.sqrt(
+        total[v_measure_err_total] ** 2 + total[v_stat_err_total] ** 2
+    )
+    print("total")
+    print(total)
+    total.to_csv(outputfile, index=False)
 
 dark_matter()
