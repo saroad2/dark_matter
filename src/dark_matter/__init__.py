@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from dark_matter.constants import FIELDNAMES, R0, V0, LONGITUDE, LONGITUDE_RADIANS, VR, \
-    V, R, V_ERR, R0_ERROR, R_ERR
+    V, R, V_ERR, R0_ERROR, R_ERR, V0_ERROR, VR_ERR
 from dark_matter.util import get_v_closest, read_data_from_file, get_fwhm_of_value
 
 
@@ -48,13 +48,15 @@ def build_data(datadir, outputfile):
         r = R0 * sin_long
         r_err = np.abs(R0_ERROR * sin_long)
         v = vr + V0 * sin_long
+        v_err = np.sqrt(vr_err ** 2 + (V0_ERROR * sin_long) ** 2)
         data.append(
             {
                 LONGITUDE: longitude,
                 LONGITUDE_RADIANS: longitude_radians,
                 VR: vr,
+                VR_ERR: vr_err,
                 V: v,
-                V_ERR: vr_err,
+                V_ERR: v_err,
                 R: r,
                 R_ERR: r_err
             }
