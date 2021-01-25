@@ -24,7 +24,7 @@ from dark_matter.constants import (
     V_STAT_ERR_TOTAL, V_ERR_TOTAL, G, DENSITY, DENSITY_ERR,
 )
 from dark_matter.util import get_v_closest, read_data_from_file, get_fwhm_of_value, \
-    meter_to_kiloparsec, kiloparsec_to_meter
+    meter_to_kiloparsec, kiloparsec_to_meter, kilogram_to_solar_mass
 
 
 @click.group()
@@ -170,8 +170,8 @@ def calculate_density(datafile, outputfile, number_of_values):
         records = df.iloc[index - number_of_values: index + number_of_values + 1]
         r = records[R]
         r_err = records[R_ERR]
-        v_total = records[V_TOTAL]
-        v_err_total = records[V_ERR_TOTAL]
+        v_total = meter_to_kiloparsec(1_000 * records[V_TOTAL])
+        v_err_total = meter_to_kiloparsec(1_000 * records[V_ERR_TOTAL])
 
         r_average = np.average(r)
         r2_average = np.average(r ** 2)
@@ -180,21 +180,21 @@ def calculate_density(datafile, outputfile, number_of_values):
         dv_dr_val = (rv_average - r_average * v_average) / (r2_average - r_average ** 2)
         dv_dr_err = np.average(((r - r_average) * v_err_total) ** 2)
 
-        r_kpc = r[index]
-        r_err_kpc = r_err[index]
-        r_unc = ufloat(kiloparsec_to_meter(r_kpc), kiloparsec_to_meter(r_err_kpc))
+        g = meter_to_kiloparsec(G)
+
+        r_unc = ufloat(r[index], r_err[index])
         v_unc = ufloat(v_total[index], v_err_total[index])
         dv_dr_unc = ufloat(dv_dr_val, dv_dr_err)
-        density = 1 / (4 * G * np.pi * r_unc ** 2) * (v_unc ** 2 + 2 * r_unc * dv_dr_unc)
+        density = 1 / (4 * g * np.pi * r_unc ** 2) * (v_unc ** 2 + 2 * r_unc * dv_dr_unc)
         # if density < 0:
         #     print("Got negative density. Ignoring and moving on")
         #     continue
         data.append(
             {
-                R: r_kpc,
-                R_ERR: r_err_kpc,
-                DENSITY: density.n,
-                DENSITY_ERR: density.s
+                R: r_unc.n,
+                R_ERR: r_unc.s,
+                DENSITY: kilogram_to_solar_mass(density.n),
+                DENSITY_ERR: kilogram_to_solar_mass(density.s)
             }
         )
     print("Writing...")

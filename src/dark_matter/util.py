@@ -38,3 +38,7 @@ def meter_to_kiloparsec(value):
 
 def kiloparsec_to_meter(value):
     return value * 3.086e20
+
+
+def kilogram_to_solar_mass(value):
+    return value * 5.0278e-31
