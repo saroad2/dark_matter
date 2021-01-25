@@ -30,3 +30,11 @@ def get_fwhm_of_value(vr, tr, velocities, temperatures, eps=5):
         (v, t) for v, t in zip(velocities, temperatures) if np.abs(t - (tr / 2)) <= eps
     ]
     return min(candidates, key=lambda x: abs(x[0] - vr))
+
+
+def meter_to_kiloparsec(value):
+    return value * 3.24078e-20
+
+
+def kiloparsec_to_meter(value):
+    return value * 3.086e20

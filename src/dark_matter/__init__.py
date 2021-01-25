@@ -5,6 +5,7 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from uncertainties import ufloat
 
 from dark_matter.constants import (
     FIELDNAMES,
@@ -20,9 +21,10 @@ from dark_matter.constants import (
     R_ERR,
     V0_ERROR,
     VR_ERR, V_FIRST, V_ERR_FIRST, V_FORTH, V_ERR_FORTH, V_TOTAL, V_MEASURE_ERR_TOTAL,
-    V_STAT_ERR_TOTAL, V_ERR_TOTAL,
+    V_STAT_ERR_TOTAL, V_ERR_TOTAL, G, DENSITY, DENSITY_ERR,
 )
-from dark_matter.util import get_v_closest, read_data_from_file, get_fwhm_of_value
+from dark_matter.util import get_v_closest, read_data_from_file, get_fwhm_of_value, \
+    meter_to_kiloparsec, kiloparsec_to_meter
 
 
 @click.group()
@@ -155,6 +157,52 @@ def combine_quarters(datafile, outputfile):
     print("total")
     print(total)
     total.to_csv(outputfile, index=False)
+
+
+@dark_matter.command("calculate-density")
+@click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
+@click.argument("outputfile", type=click.Path(dir_okay=False))
+@click.option("-n", "--number-of-values", type=int, default=3)
+def calculate_density(datafile, outputfile, number_of_values):
+    df = pd.read_csv(datafile)
+    data = []
+    for index in range(number_of_values, df.shape[0] - number_of_values):
+        records = df.iloc[index - number_of_values: index + number_of_values + 1]
+        r = records[R]
+        r_err = records[R_ERR]
+        v_total = records[V_TOTAL]
+        v_err_total = records[V_ERR_TOTAL]
+
+        r_average = np.average(r)
+        r2_average = np.average(r ** 2)
+        v_average = np.average(v_total)
+        rv_average = np.average(r * v_total)
+        dv_dr_val = (rv_average - r_average * v_average) / (r2_average - r_average ** 2)
+        dv_dr_err = np.average(((r - r_average) * v_err_total) ** 2)
+
+        r_kpc = r[index]
+        r_err_kpc = r_err[index]
+        r_unc = ufloat(kiloparsec_to_meter(r_kpc), kiloparsec_to_meter(r_err_kpc))
+        v_unc = ufloat(v_total[index], v_err_total[index])
+        dv_dr_unc = ufloat(dv_dr_val, dv_dr_err)
+        density = 1 / (4 * G * np.pi * r_unc ** 2) * (v_unc ** 2 + 2 * r_unc * dv_dr_unc)
+        # if density < 0:
+        #     print("Got negative density. Ignoring and moving on")
+        #     continue
+        data.append(
+            {
+                R: r_kpc,
+                R_ERR: r_err_kpc,
+                DENSITY: density.n,
+                DENSITY_ERR: density.s
+            }
+        )
+    print("Writing...")
+    with open(outputfile, mode="w", newline="") as fd:
+        csv_writer = csv.DictWriter(fd, fieldnames=[R, R_ERR, DENSITY, DENSITY_ERR])
+        csv_writer.writeheader()
+        csv_writer.writerows(data)
+    print("Done!")
 
 
 @dark_matter.command("plot-quarters")
