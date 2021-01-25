@@ -145,7 +145,7 @@ def combine_quarters(datafile, outputfile):
     total[V_TOTAL] = (total[V_FIRST] + total[V_FORTH]) / 2
     total[V_MEASURE_ERR_TOTAL] = np.sqrt(
         total[V_ERR_FIRST] ** 2 + total[V_ERR_FORTH] ** 2
-    )
+    ) / 2
     total[V_STAT_ERR_TOTAL] = np.sqrt(
         (total[V_FIRST] - total[V_TOTAL]) ** 2 + (total[V_FORTH] - total[V_TOTAL]) ** 2
     )
