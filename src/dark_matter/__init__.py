@@ -178,7 +178,7 @@ def calculate_density(datafile, outputfile, number_of_values):
         v_average = np.average(v_total)
         rv_average = np.average(r * v_total)
         dv_dr_val = (rv_average - r_average * v_average) / (r2_average - r_average ** 2)
-        dv_dr_err = np.average(((r - r_average) * v_err_total) ** 2)
+        dv_dr_err = np.sqrt(np.average(((r - r_average) * v_err_total) ** 2))
 
         g = meter_to_kiloparsec(G)
 
