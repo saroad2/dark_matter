@@ -163,7 +163,8 @@ def combine_quarters(datafile, outputfile):
 @click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
 @click.argument("outputfile", type=click.Path(dir_okay=False))
 @click.option("-n", "--number-of-values", type=int, default=3)
-def calculate_density(datafile, outputfile, number_of_values):
+@click.option("-p", "--positive-only", is_flag=True)
+def calculate_density(datafile, outputfile, number_of_values, positive_only):
     df = pd.read_csv(datafile)
     data = []
     for index in range(number_of_values, df.shape[0] - number_of_values):
@@ -180,15 +181,18 @@ def calculate_density(datafile, outputfile, number_of_values):
         dv_dr_val = (rv_average - r_average * v_average) / (r2_average - r_average ** 2)
         dv_dr_err = np.sqrt(np.average(((r - r_average) * v_err_total) ** 2))
 
+
         g = meter_to_kiloparsec(G)
 
         r_unc = ufloat(r[index], r_err[index])
         v_unc = ufloat(v_total[index], v_err_total[index])
         dv_dr_unc = ufloat(dv_dr_val, dv_dr_err)
         density = 1 / (4 * g * np.pi * r_unc ** 2) * (v_unc ** 2 + 2 * r_unc * dv_dr_unc)
-        # if density < 0:
-        #     print("Got negative density. Ignoring and moving on")
-        #     continue
+
+        if positive_only and density < 0:
+            print("Got negative density, continuing")
+            continue
+
         data.append(
             {
                 R: r_unc.n,
