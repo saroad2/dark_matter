@@ -207,24 +207,26 @@ def calculate_density(datafile, outputfile, number_of_values):
 
 @dark_matter.command("plot-quarters")
 @click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
-def plot_quarters(datafile):
+@click.option("-t", "--total-only", is_flag=True)
+def plot_quarters(datafile, total_only):
     df = pd.read_csv(datafile)
-    plt.errorbar(
-        df[R],
-        df[V_FIRST],
-        xerr=df[R_ERR],
-        yerr=df[V_ERR_FIRST],
-        linestyle="None",
-        ecolor="b",
-    )
-    plt.errorbar(
-        df[R],
-        df[V_FORTH],
-        xerr=df[R_ERR],
-        yerr=df[V_ERR_FORTH],
-        linestyle="None",
-        ecolor="r",
-    )
+    if not total_only:
+        plt.errorbar(
+            df[R],
+            df[V_FIRST],
+            xerr=df[R_ERR],
+            yerr=df[V_ERR_FIRST],
+            linestyle="None",
+            ecolor="b",
+        )
+        plt.errorbar(
+            df[R],
+            df[V_FORTH],
+            xerr=df[R_ERR],
+            yerr=df[V_ERR_FORTH],
+            linestyle="None",
+            ecolor="r",
+        )
     plt.errorbar(
         df[R],
         df[V_TOTAL],
