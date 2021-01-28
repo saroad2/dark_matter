@@ -159,6 +159,22 @@ def combine_quarters(datafile, outputfile):
     total.to_csv(outputfile, index=False)
 
 
+@dark_matter.command("monotonic-quarters")
+@click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
+@click.argument("outputfile", type=click.Path(dir_okay=False))
+def monotonic_quarters(datafile, outputfile):
+    df = pd.read_csv(datafile)
+    max_v = 0
+    selected_indices = []
+    for index, record in df.iterrows():
+        v_total = float(record[V_TOTAL])
+        if v_total >= max_v:
+            max_v = v_total
+            selected_indices.append(index)
+    new_df = df.iloc[selected_indices]
+    new_df.to_csv(outputfile, index=False)
+
+
 @dark_matter.command("calculate-density")
 @click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
 @click.argument("outputfile", type=click.Path(dir_okay=False))
