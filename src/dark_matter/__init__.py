@@ -277,6 +277,7 @@ def plot_density(datafile):
         yerr=df[DENSITY_ERR],
         linestyle="None",
     )
+    plt.yscale("log")
     plt.xlabel("R")
     plt.ylabel(r"$\rho$")
     plt.show()
