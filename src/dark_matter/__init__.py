@@ -21,10 +21,11 @@ from dark_matter.constants import (
     R_ERR,
     V0_ERROR,
     VR_ERR, V_FIRST, V_ERR_FIRST, V_FORTH, V_ERR_FORTH, V_TOTAL, V_MEASURE_ERR_TOTAL,
-    V_STAT_ERR_TOTAL, V_ERR_TOTAL, G, DENSITY, DENSITY_ERR,
+    V_STAT_ERR_TOTAL, V_ERR_TOTAL, G, DENSITY, DENSITY_ERR, BULDGE_RADIUS,
 )
 from dark_matter.util import get_v_closest, read_data_from_file, get_fwhm_of_value, \
-    meter_to_kiloparsec, kiloparsec_to_meter, kilogram_to_solar_mass
+    meter_to_kiloparsec, kiloparsec_to_meter, kilogram_to_solar_mass, get_dv_dr, \
+    get_partwise_dv_dr
 
 
 @click.group()
@@ -175,6 +176,22 @@ def monotonic_quarters(datafile, outputfile):
     new_df.to_csv(outputfile, index=False)
 
 
+@dark_matter.command("calculate-dv-dr")
+@click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
+# @click.argument("outputfile", type=click.Path(dir_okay=False))
+@click.option("-b", "--buldge-radius", type=int, default=BULDGE_RADIUS)
+def calculate_dv_dr(datafile, buldge_radius):
+    df = pd.read_csv(datafile)
+    r, v, v_err = df[R], df[V_TOTAL], df[V_ERR_TOTAL]
+    dv_dr, dv_dr_err = get_partwise_dv_dr(
+        r=r, v=v, v_err=v_err, buldge_radius=buldge_radius
+    )
+    plt.plot(r, dv_dr)
+    plt.xlabel("R")
+    plt.ylabel("V")
+    plt.show()
+
+
 @dark_matter.command("calculate-density")
 @click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
 @click.argument("outputfile", type=click.Path(dir_okay=False))
@@ -190,13 +207,7 @@ def calculate_density(datafile, outputfile, number_of_values, positive_only):
         v_total = meter_to_kiloparsec(1_000 * records[V_TOTAL])
         v_err_total = meter_to_kiloparsec(1_000 * records[V_ERR_TOTAL])
 
-        r_average = np.average(r)
-        r2_average = np.average(r ** 2)
-        v_average = np.average(v_total)
-        rv_average = np.average(r * v_total)
-        dv_dr_val = (rv_average - r_average * v_average) / (r2_average - r_average ** 2)
-        dv_dr_err = np.sqrt(np.average(((r - r_average) * v_err_total) ** 2))
-
+        dv_dr_val, dv_dr_err = get_dv_dr(r=r, v=v_total, v_err=v_err_total)
 
         g = meter_to_kiloparsec(G)
 

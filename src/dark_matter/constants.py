@@ -5,6 +5,8 @@ V0 = 230  # Kilometers per second
 V0_ERROR = 10  # Kilometers per second
 G = 6.67430e-11  # MKS
 
+BULDGE_RADIUS = 2.37
+
 LONGITUDE = "longitude"
 LONGITUDE_RADIANS = "longitude_radians"
 VR = "Vr"
