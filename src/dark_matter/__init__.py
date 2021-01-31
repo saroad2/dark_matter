@@ -268,7 +268,8 @@ def plot_quarters(datafile, total_only):
 
 @dark_matter.command("plot-density")
 @click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
-def plot_density(datafile):
+@click.option("-l", "--logscale/--no-logscale", is_flag=True, default=False)
+def plot_density(datafile, logscale):
     df = pd.read_csv(datafile)
     plt.errorbar(
         df[R],
@@ -277,7 +278,8 @@ def plot_density(datafile):
         yerr=df[DENSITY_ERR],
         linestyle="None",
     )
-    plt.yscale("log")
+    if logscale:
+        plt.yscale("log")
     plt.xlabel("R")
     plt.ylabel(r"$\rho$")
     plt.show()
