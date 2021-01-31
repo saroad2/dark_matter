@@ -5,7 +5,7 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from uncertainties import ufloat
+from uncertainties import unumpy
 
 from dark_matter.constants import (
     FIELDNAMES,
@@ -195,44 +195,37 @@ def calculate_dv_dr(datafile, buldge_radius):
 @dark_matter.command("calculate-density")
 @click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
 @click.argument("outputfile", type=click.Path(dir_okay=False))
-@click.option("-n", "--number-of-values", type=int, default=3)
-@click.option("-p", "--positive-only", is_flag=True)
-def calculate_density(datafile, outputfile, number_of_values, positive_only):
+@click.option("-b", "--buldge-radius", type=int, default=BULDGE_RADIUS)
+def calculate_density(datafile, outputfile, buldge_radius):
     df = pd.read_csv(datafile)
-    data = []
-    for index in range(number_of_values, df.shape[0] - number_of_values):
-        records = df.iloc[index - number_of_values: index + number_of_values + 1]
-        r = records[R]
-        r_err = records[R_ERR]
-        v_total = meter_to_kiloparsec(1_000 * records[V_TOTAL])
-        v_err_total = meter_to_kiloparsec(1_000 * records[V_ERR_TOTAL])
+    r = df[R]
+    r_err = df[R_ERR]
+    v_total = meter_to_kiloparsec(1_000 * df[V_TOTAL])
+    v_err_total = meter_to_kiloparsec(1_000 * df[V_ERR_TOTAL])
+    dv_dr_val, dv_dr_err = get_partwise_dv_dr(
+        r=r, v=v_total, v_err=v_err_total, buldge_radius=buldge_radius
+    )
 
-        dv_dr_val, dv_dr_err = get_dv_dr(r=r, v=v_total, v_err=v_err_total)
+    g = meter_to_kiloparsec(G)
+    r_unc = unumpy.uarray(r, r_err)
+    v_unc = unumpy.uarray(v_total, v_err_total)
+    dv_dr_unc = unumpy.uarray(dv_dr_val, dv_dr_err)
 
-        g = meter_to_kiloparsec(G)
+    density = kilogram_to_solar_mass(
+        1 / (4 * g * np.pi * r_unc ** 2) * (v_unc ** 2 + 2 * r_unc * dv_dr_unc)
+    )
+    data = {
+        R: r,
+        R_ERR: r_err,
+        DENSITY: unumpy.nominal_values(density),
+        DENSITY_ERR: unumpy.std_devs(density),
+    }
 
-        r_unc = ufloat(r[index], r_err[index])
-        v_unc = ufloat(v_total[index], v_err_total[index])
-        dv_dr_unc = ufloat(dv_dr_val, dv_dr_err)
-        density = 1 / (4 * g * np.pi * r_unc ** 2) * (v_unc ** 2 + 2 * r_unc * dv_dr_unc)
+    new_df = pd.DataFrame(data, columns=[R, R_ERR, DENSITY, DENSITY_ERR])
 
-        if positive_only and density < 0:
-            print("Got negative density, continuing")
-            continue
-
-        data.append(
-            {
-                R: r_unc.n,
-                R_ERR: r_unc.s,
-                DENSITY: kilogram_to_solar_mass(density.n),
-                DENSITY_ERR: kilogram_to_solar_mass(density.s)
-            }
-        )
     print("Writing...")
     with open(outputfile, mode="w", newline="") as fd:
-        csv_writer = csv.DictWriter(fd, fieldnames=[R, R_ERR, DENSITY, DENSITY_ERR])
-        csv_writer.writeheader()
-        csv_writer.writerows(data)
+        new_df.to_csv(fd, index=False)
     print("Done!")
 
 
