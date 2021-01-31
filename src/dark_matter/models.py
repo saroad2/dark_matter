@@ -45,16 +45,21 @@ def model_1(a, x):
     )
 
 
-@fitting_function(n=5)
+@fitting_function(n=6)
 def model_2(a, x):
     buldge_initial_density = a[0]
-    disk_basic_density = a[1]
-    disk_basic_radius = a[2]
-    dark_basic_density = a[3]
-    dark_basic_radius = a[4]
+    buldge_decay_power = a[1]
+    disk_basic_density = a[2]
+    disk_basic_radius = a[3]
+    dark_basic_density = a[4]
+    dark_basic_radius = a[5]
 
     return (
-        buldge_density(x, buldge_initial_density=buldge_initial_density)
+        buldge_density(
+            x,
+            buldge_initial_density=buldge_initial_density,
+            buldge_decay_power=buldge_decay_power,
+        )
         + disk_density(
             x,
             disk_basic_density=disk_basic_density,
@@ -68,16 +73,21 @@ def model_2(a, x):
     )
 
 
-@fitting_function(n=5)
+@fitting_function(n=6)
 def model_3(a, x):
     buldge_initial_density = a[0]
-    disk_basic_density = a[1]
-    disk_basic_radius = a[2]
-    dark_basic_density = a[3]
-    dark_basic_radius = a[4]
+    buldge_decay_power = a[1]
+    disk_basic_density = a[2]
+    disk_basic_radius = a[3]
+    dark_basic_density = a[4]
+    dark_basic_radius = a[5]
 
     return (
-        buldge_density(x, buldge_initial_density=buldge_initial_density)
+        buldge_density(
+            x,
+            buldge_initial_density=buldge_initial_density,
+            buldge_decay_power=buldge_decay_power,
+        )
         + disk_density(
             x,
             disk_basic_density=disk_basic_density,
