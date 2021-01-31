@@ -10,8 +10,17 @@ def buldge_density(x, buldge_initial_density, buldge_decay_power=3, buldge_radiu
     )
 
 
-def disk_density(x, disk_basic_density, disk_basic_radius):
-    return disk_basic_density * np.exp(-x / disk_basic_radius)
+def disk_density(
+    x,
+    disk_basic_density,
+    disk_basic_radius,
+    disk_fraction_decay=0,
+    disk_exponential_decay=1,
+):
+    normalized_radius = x / disk_basic_radius
+    return disk_basic_density * np.power(
+        normalized_radius, disk_fraction_decay
+    ) * np.exp(-np.power(normalized_radius, disk_exponential_decay))
 
 
 def burket_model(x, dark_basic_density, dark_basic_radius):
@@ -24,12 +33,14 @@ def nfw(x, dark_basic_density, dark_basic_radius):
     return dark_basic_density / (normalized_radius * (1 + normalized_radius ** 2))
 
 
-@fitting_function(n=4)
+@fitting_function(n=6)
 def model_1(a, x):
     buldge_initial_density = a[0]
     buldge_decay_power = a[1]
     disk_basic_density = a[2]
     disk_basic_radius = a[3]
+    disk_fraction_decay = a[4]
+    disk_exponential_decay = a[5]
 
     return (
         buldge_density(
@@ -41,18 +52,22 @@ def model_1(a, x):
             x,
             disk_basic_density=disk_basic_density,
             disk_basic_radius=disk_basic_radius,
+            disk_fraction_decay=disk_fraction_decay,
+            disk_exponential_decay=disk_exponential_decay,
         )
     )
 
 
-@fitting_function(n=6)
+@fitting_function(n=8)
 def model_2(a, x):
     buldge_initial_density = a[0]
     buldge_decay_power = a[1]
     disk_basic_density = a[2]
     disk_basic_radius = a[3]
-    dark_basic_density = a[4]
-    dark_basic_radius = a[5]
+    disk_fraction_decay = a[4]
+    disk_exponential_decay = a[5]
+    dark_basic_density = a[6]
+    dark_basic_radius = a[7]
 
     return (
         buldge_density(
@@ -64,6 +79,8 @@ def model_2(a, x):
             x,
             disk_basic_density=disk_basic_density,
             disk_basic_radius=disk_basic_radius,
+            disk_fraction_decay=disk_fraction_decay,
+            disk_exponential_decay=disk_exponential_decay,
         )
         + burket_model(
             x,
@@ -73,14 +90,16 @@ def model_2(a, x):
     )
 
 
-@fitting_function(n=6)
+@fitting_function(n=8)
 def model_3(a, x):
     buldge_initial_density = a[0]
     buldge_decay_power = a[1]
     disk_basic_density = a[2]
     disk_basic_radius = a[3]
-    dark_basic_density = a[4]
-    dark_basic_radius = a[5]
+    disk_fraction_decay = a[4]
+    disk_exponential_decay = a[5]
+    dark_basic_density = a[6]
+    dark_basic_radius = a[7]
 
     return (
         buldge_density(
@@ -92,6 +111,8 @@ def model_3(a, x):
             x,
             disk_basic_density=disk_basic_density,
             disk_basic_radius=disk_basic_radius,
+            disk_fraction_decay=disk_fraction_decay,
+            disk_exponential_decay=disk_exponential_decay,
         )
         + nfw(
             x,
