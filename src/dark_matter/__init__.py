@@ -262,4 +262,20 @@ def plot_quarters(datafile, total_only):
     plt.show()
 
 
+@dark_matter.command("plot-density")
+@click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
+def plot_density(datafile):
+    df = pd.read_csv(datafile)
+    plt.errorbar(
+        df[R],
+        df[DENSITY],
+        xerr=df[R_ERR],
+        yerr=df[DENSITY_ERR],
+        linestyle="None",
+    )
+    plt.xlabel("R")
+    plt.ylabel(r"$\rho$")
+    plt.show()
+
+
 dark_matter()
