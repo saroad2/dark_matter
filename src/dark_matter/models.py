@@ -23,6 +23,14 @@ def disk_density(
     ) * np.exp(-np.power(normalized_radius, disk_exponential_decay))
 
 
+def hernquist(x, basic_density, basic_radius, alpha=1, beta=1, gamma=3):
+    normalized_radius = x / basic_radius
+    result = basic_density / (4 * np.pi * np.power(basic_radius, 3))
+    result *= np.power(normalized_radius, -alpha)
+    result *= np.power(1 + np.power(normalized_radius, beta), -gamma)
+    return result
+
+
 def burkert_model(x, dark_basic_density, dark_basic_radius):
     normalized_radius = x / dark_basic_radius
     return dark_basic_density / ((1 + normalized_radius) * (1 + normalized_radius ** 2))
@@ -184,6 +192,48 @@ def sersic_plus_nfw(a, x):
             disk_basic_radius=disk_basic_radius,
             disk_fraction_decay=disk_fraction_decay,
             disk_exponential_decay=disk_exponential_decay,
+        )
+        + nfw(
+            x,
+            dark_basic_density=dark_basic_density,
+            dark_basic_radius=dark_basic_radius,
+        )
+    )
+
+
+@fitting_function(n=4)
+def herquist_plus_burkert(a, x):
+    barionic_basic_density = a[0]
+    barionic_basic_radius = a[1]
+    dark_basic_density = a[2]
+    dark_basic_radius = a[3]
+
+    return (
+        hernquist(
+            x,
+            basic_density=barionic_basic_density,
+            basic_radius=barionic_basic_radius,
+        )
+        + burkert_model(
+            x,
+            dark_basic_density=dark_basic_density,
+            dark_basic_radius=dark_basic_radius,
+        )
+    )
+
+
+@fitting_function(n=4)
+def herquist_plus_nfw(a, x):
+    barionic_basic_density = a[0]
+    barionic_basic_radius = a[1]
+    dark_basic_density = a[2]
+    dark_basic_radius = a[3]
+
+    return (
+        hernquist(
+            x,
+            basic_density=barionic_basic_density,
+            basic_radius=barionic_basic_radius,
         )
         + nfw(
             x,
