@@ -52,9 +52,13 @@ def plot_long_data(datafile):
     longitude = float(datafile.stem.split("_")[0])
     vr, tr = get_v_closest(longitude, velocities, temperatures)
     vh, th = get_fwhm_of_value(vr, tr, velocities, temperatures)
-    plt.plot(velocities, temperatures, ".b")
     plt.scatter([vr], [tr], s=30, color="r")
     plt.scatter([vh], [th], s=30, color="g")
+    plt.plot(velocities, temperatures, ".b", ms=3)
+    plt.title(f"Longitude {longitude} - Velocity To Temperature")
+    plt.xlabel("Velocity [km/sec]")
+    plt.ylabel("Temperature [K]")
+    plt.grid()
     plt.show()
 
 
