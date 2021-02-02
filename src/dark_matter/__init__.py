@@ -111,25 +111,17 @@ def plot_data(datafile):
     data = data.transpose()
     r_list, r_err_list, v_list, v_err_list = data
     plt.errorbar(
-        r_list[r_list > 0],
-        v_list[r_list > 0],
-        xerr=r_err_list[r_list > 0],
-        yerr=v_err_list[r_list > 0],
+        r_list,
+        v_list,
+        xerr=r_err_list,
+        yerr=v_err_list,
         linestyle="None",
-        ecolor="r",
+        elinewidth=1,
     )
-    plt.errorbar(
-        np.abs(r_list[r_list < 0]),
-        np.abs(v_list[r_list < 0]),
-        xerr=r_err_list[r_list < 0],
-        yerr=v_err_list[r_list < 0],
-        linestyle="None",
-        ecolor="b",
-    )
-    plt.vlines([0], [-200], [200], "k")
-    plt.hlines([0], [-7.5], [6.5], "k")
-    plt.xlabel("R")
-    plt.ylabel("V")
+    plt.title("Radius to Velocity")
+    plt.xlabel("Radius [kpc]")
+    plt.ylabel("Velocity [km/h]")
+    plt.grid()
     plt.show()
 
 
