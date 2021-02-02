@@ -14,8 +14,8 @@ def disk_density(
     x,
     disk_basic_density,
     disk_basic_radius,
-    disk_fraction_decay=0,
-    disk_exponential_decay=1,
+    disk_fraction_decay=0.0,
+    disk_exponential_decay=1.0,
 ):
     normalized_radius = x / disk_basic_radius
     return disk_basic_density * np.power(

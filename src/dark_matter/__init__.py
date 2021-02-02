@@ -2,9 +2,18 @@ from pathlib import Path
 
 import click
 import csv
+from eddington import (
+    FittingData,
+    FittingFunctionsRegistry,
+    fit,
+    plot_fitting,
+    plot_residuals,
+    show_or_export,
+)
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import regex
 from uncertainties import unumpy
 
 from dark_matter.constants import (
@@ -23,6 +32,7 @@ from dark_matter.constants import (
     VR_ERR, V_FIRST, V_ERR_FIRST, V_FORTH, V_ERR_FORTH, V_TOTAL, V_MEASURE_ERR_TOTAL,
     V_STAT_ERR_TOTAL, V_ERR_TOTAL, G, DENSITY, DENSITY_ERR, BULDGE_RADIUS,
 )
+from dark_matter import models
 from dark_matter.util import get_v_closest, read_data_from_file, get_fwhm_of_value, \
     meter_to_kiloparsec, kiloparsec_to_meter, kilogram_to_solar_mass, get_dv_dr, \
     get_partwise_dv_dr
@@ -283,6 +293,58 @@ def plot_density(datafile, logscale):
     plt.xlabel("R")
     plt.ylabel(r"$\rho$")
     plt.show()
+
+
+@dark_matter.command("create-eddington-plots")
+@click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
+@click.option("-f", "--function", type=str, required=True)
+@click.option("-a", "--initial-guess", type=str, required=True)
+@click.option("--title", type=str)
+@click.option("-o", "--output-directory", type=click.Path(file_okay=False))
+def create_eddington_plots(datafile, initial_guess, function, title, output_directory):
+    data = FittingData.read_from_csv(datafile)
+    func = FittingFunctionsRegistry.load(function)
+    regex_split = regex.split("[,\t ]+", initial_guess)
+    a = np.array(list(map(float, regex_split)))
+    result = fit(data=data, func=func, a0=a)
+    if title is None:
+        title = function.replace("_", " ").replace("plus", "+").title()
+    if output_directory is None:
+        output_directory = Path.cwd() / function
+    else:
+        output_directory = Path(output_directory)
+    output_directory.mkdir(exist_ok=True)
+    result.save_txt(output_directory / f"{function}_result.txt")
+    result.save_json(output_directory / f"{function}_result.json")
+    common_args = dict(
+        xmin=0.3,
+        xlabel="R [kpc]",
+        ylabel=r"$\rho$ [solar mass / kpc^3]",
+        grid=True,
+    )
+    with plot_fitting(
+        func=func,
+        data=data,
+        a=result.a,
+        title_name=title,
+        y_log_scale=True,
+        **common_args,
+    ) as plot_figure:
+        show_or_export(
+            plot_figure,
+            output_path=output_directory / f"{function}_fitting.png"
+        )
+    with plot_residuals(
+        func=func,
+        data=data,
+        a=result.a,
+        title_name=f"{title} - Residuals",
+        **common_args,
+    ) as plot_figure:
+        show_or_export(
+            plot_figure,
+            output_path=output_directory / f"{function}_residuals.png"
+        )
 
 
 dark_matter()
