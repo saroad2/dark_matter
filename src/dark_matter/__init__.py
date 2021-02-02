@@ -6,6 +6,7 @@ from eddington import (
     FittingData,
     FittingFunctionsRegistry,
     fit,
+    plot_data,
     plot_fitting,
     plot_residuals,
     show_or_export,
@@ -99,7 +100,7 @@ def build_data(datadir, outputfile):
 
 @dark_matter.command("plot-data")
 @click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
-def plot_data(datafile):
+def plot_dark_data(datafile):
     data = []
     with open(datafile, mode="r") as fd:
         reader = csv.DictReader(fd)
@@ -120,7 +121,7 @@ def plot_data(datafile):
     )
     plt.title("Radius to Velocity")
     plt.xlabel("Radius [kpc]")
-    plt.ylabel("Velocity [km/h]")
+    plt.ylabel("Velocity [km/sec]")
     plt.grid()
     plt.show()
 
@@ -233,39 +234,41 @@ def calculate_density(datafile, outputfile, buldge_radius):
 
 @dark_matter.command("plot-quarters")
 @click.argument("datafile", type=click.Path(exists=True, dir_okay=False))
-@click.option("-t", "--total-only", is_flag=True)
-def plot_quarters(datafile, total_only):
-    df = pd.read_csv(datafile)
-    if not total_only:
-        plt.errorbar(
-            df[R],
-            df[V_FIRST],
-            xerr=df[R_ERR],
-            yerr=df[V_ERR_FIRST],
-            linestyle="None",
-            ecolor="b",
-        )
-        plt.errorbar(
-            df[R],
-            df[V_FORTH],
-            xerr=df[R_ERR],
-            yerr=df[V_ERR_FORTH],
-            linestyle="None",
-            ecolor="r",
-        )
-    plt.errorbar(
-        df[R],
-        df[V_TOTAL],
-        xerr=df[R_ERR],
-        yerr=df[V_ERR_TOTAL],
-        linestyle="None",
-        ecolor="y",
-    )
-    plt.vlines([0], [-200], [200], "k")
-    plt.hlines([0], [-7.5], [6.5], "k")
-    plt.xlabel("R")
-    plt.ylabel("V")
-    plt.show()
+@click.option("--first/--no-first", is_flag=True, default=True)
+@click.option("--forth/--no-forth", is_flag=True, default=True)
+@click.option("--total/--no-total", is_flag=True, default=True)
+@click.option("-o", "--output-directory", type=click.Path(file_okay=False))
+def plot_quarters(datafile, first, forth, total, output_directory):
+    if output_directory is None:
+        output_directory = Path.cwd() / "quarters"
+    else:
+        output_directory = Path(output_directory)
+    output_directory.mkdir(exist_ok=True)
+    data = FittingData.read_from_csv(datafile)
+    data.x_column = R
+    data.xerr_column = R_ERR
+    common_args = dict(xlabel="Radius [kpc]", ylabel="Velocity [km/sec]", grid=True)
+    if first:
+        data.y_column = V_FIRST
+        data.yerr_column = V_ERR_FIRST
+        with plot_data(
+            data=data, title_name="First Quarter Data", **common_args
+        ) as first_figure:
+            show_or_export(first_figure, output_directory / "first.png")
+    if forth:
+        data.y_column = V_FORTH
+        data.yerr_column = V_ERR_FORTH
+        with plot_data(
+            data=data, title_name="Forth Quarter Data", **common_args
+        ) as forth_figure:
+            show_or_export(forth_figure, output_directory / "forth.png")
+    if total:
+        data.y_column = V_TOTAL
+        data.yerr_column = V_ERR_TOTAL
+        with plot_data(
+            data=data, title_name="Total Data", **common_args
+        ) as total_figure:
+            show_or_export(total_figure, output_directory / "total.png")
 
 
 @dark_matter.command("plot-density")
